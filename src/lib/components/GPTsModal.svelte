@@ -1,4 +1,6 @@
 <script>
+    import ModalConfiguration from './ModalConfiguration.svelte';
+
 	export let showModal = false;
 	export let closeModal;
 
@@ -74,15 +76,7 @@
                                 </label>  
                                 <textarea class="w-full border border-gray-300 p-2 rounded" id="description" placeholder="He knows everything about python"></textarea>  
                             </div>  
-                            <div class="mb-4">  
-                                <label class="block text-gray-700 text-sm font-bold mb-2" for="model">  
-                                    Model  
-                                </label>  
-                                <select class="w-full border border-gray-300 p-2 rounded" id="model">  
-                                    <option>CohereForAI/c4ai-command-r-plus</option>  
-                                    <!-- Add other options as needed -->  
-                                </select>  
-                            </div>  
+                            <ModalConfiguration />
                             <div class="mb-4">  
                                 <label class="block text-gray-700 text-sm font-bold mb-2">  
                                     User start messages  
