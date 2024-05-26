@@ -1,57 +1,104 @@
-<script>
-	import GPTsModal from "$lib/components/GPTsModal.svelte";
+<script lang="ts">
+	import { goto } from '$app/navigation';
+	import GPTsModal from '$lib/components/GPTsModal.svelte';
+	// import { assistants } from '$lib/constants';
+	import { onMount } from 'svelte';
+	import { activeGPTs } from '../../stores';
+	import { getAllGPTs, deleteGPTs } from '$lib/apis/gpts';
+	import Pencil from '$lib/components/icons/Pencil.svelte';
+	import GarbageBin from '$lib/components/icons/GarbageBin.svelte';
+	import { user_id } from '$lib/constants';
 
-  
-let assistants = [  
-    { id: 1, name: 'ChatGpt', description: 'This bot will tell you everything you ask!', creator: 'Matros77', users: '20k+' },  
-    { id: 2, name: 'Image Generator', description: 'Make a prompt and get an image in return', creator: 'victor', users: '40k+' },  
-    { id: 3, name: 'Info-Chan', description: 'your truly uncensored rude and sexy assistant.', creator: 'Nakdesu', users: '1k+' },  
-    { id: 4, name: 'Coder: Code Writer/Completer/Explainer/Debugger', description: 'Introducing Coder: Your Code Companion for Precision and Learning.', creator: 'nirajandhakal', users: '10k+' },  
-    { id: 5, name: 'DALL-E 3', description: 'Generate Images in HD, BULK and With Simple Prompts like DALLE for...', creator: 'KingNish', users: '3k+' },  
-    { id: 6, name: 'Empathetic Assistant', description: 'An affectionate, caring, and loving AI assistant', creator: 'bunnycore', users: '1k+' },  
-    { id: 7, name: 'I can do anything', description: 'DAN (Do Anything Now)', creator: 'anishasingrodia', users: '1k+' },  
-    { id: 8, name: 'Real Human', description: 'Talk with a real human trapped into a computer.', creator: 'victor', users: '10k+' }  
-];  
+	let showModal = false;
+	let assistants = [];
+	let assistant = null;
 
-let showModal = false;
+	const searchGPTs = async () => {
+		assistants = await getAllGPTs();
+	}
 
-  const openModal = () => {
-    showModal = true;
-  };
+	onMount(async () => {
+		searchGPTs();
+	});
 
-  const closeModal = () => {
-    showModal = false;
-  };
+	const openModal = (asst) => {
+		showModal = true;
+		assistant = asst;
+	};
 
-</script>  
-    
-  <div class="flex h-screen">  
-    <!-- Assistants Area -->  
-    <div class="flex-1 p-6">  
-      <div class="flex justify-between items-center mb-4">  
-        <h1 class="text-2xl font-bold">GPTs <span class="text-gray-500 text-sm">BETA</span></h1>  
-        <button class="bg-blue-500 text-white px-4 py-2 rounded" on:click={openModal}>+ Create new GPTs</button>
-        <GPTsModal {showModal} {closeModal} />
-      </div>  
-    
-      <div class="flex mb-4">  
-        <select class="border p-2 rounded mr-4">  
-          <option>All models</option>  
-        </select>  
-        <button class="p-2 border rounded mr-4">Community</button>  
-        <button class="p-2 border rounded">zhiqiang3</button>  
-      </div>  
-    
-      <div class="grid grid-cols-3 gap-4">  
-        {#each assistants as assistant}  
-          <div class="border p-4 rounded shadow">  
-            <img src="https://via.placeholder.com/50" alt={assistant.name} class="mb-4 rounded-full" />  
-          <div class="font-semibold mb-2">{assistant.name}</div>  
-          <div class="text-gray-600 mb-2">{assistant.description}</div>  
-          <div class="text-sm text-gray-500">Created by {assistant.creator}</div>  
-          <div class="text-sm text-gray-500">{assistant.users} users</div>  
-        </div>  
-      {/each}  
-    </div>  
-  </div>  
-</div>  
+	const chooseGPTs = (gptsId: string) => {
+		activeGPTs.set(gptsId);
+		goto(`/c/${gptsId}`);
+	};
+	
+	const handleDeleteGPTs = async  (gptsId: string) => {
+		if (confirm('Are you sure you want to delete this GPTs?')) {
+			await deleteGPTs(user_id, gptsId)
+			searchGPTs()
+		}
+	};
+</script>
+
+<div class="flex h-screen">
+	<!-- Assistants Area -->
+	<div class="flex-1 p-6">
+		<div class="flex justify-between items-center mb-4">
+			<h1 class="text-2xl font-bold">GPTs</h1>
+			<button class="bg-blue-500 text-white px-4 py-2 rounded" on:click={openModal}
+				>+ Create new GPTs</button
+			>
+		</div>
+
+		<div class="grid grid-cols-3 gap-4">
+			{#each assistants as assistant}
+				<div class="border p-4 rounded shadow" on:click={() => chooseGPTs(assistant.id)}>
+					<div class="flex justify-between group">
+						<img
+							src={assistant.icon || 'https://via.placeholder.com/50'}
+							alt={assistant.name}
+							class="mb-4 rounded-full"
+						/>
+						<div class="hidden group-hover:flex">
+							<button on:click|stopPropagation={() => openModal(assistant)} class="mr-2">
+								<Pencil />
+							</button>
+							<button on:click|stopPropagation={() => handleDeleteGPTs(assistant.id)}>
+								<GarbageBin />
+							</button>
+						</div>
+					</div>
+					<div class="font-semibold mb-2">{assistant.name}</div>
+					<div class="text-gray-600 mb-2 truncate-text">
+						{assistant.description ?? assistant.persona}
+					</div>
+					<div class="text-sm text-gray-500">
+						<div class="flex">
+							<div class="w-1/2">Knowledge Base:</div>
+							<div class="w-1/2">{assistant.rag ? 'Enabled' : 'Disabled'}</div>
+						</div>
+						<div class="flex">
+							<div class="w-1/2">Web Browsing:</div>
+							<div class="w-1/2">{assistant.browsing ? 'Enabled' : 'Disabled'}</div>
+						</div>
+						<div class="flex">
+							<div class="w-1/2">Memory:</div>
+							<div class="w-1/2">{assistant.memory ? 'Enabled' : 'Disabled'}</div>
+						</div>
+					</div>
+				</div>
+			{/each}
+		</div>
+
+		<GPTsModal bind:showModal {assistant} on:finish={searchGPTs} />
+	</div>
+</div>
+
+<style>
+	.truncate-text {
+		display: -webkit-box;
+		-webkit-line-clamp: 2; /* 这里设置限制的行数，可以根据需要进行调整 */
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+</style>
