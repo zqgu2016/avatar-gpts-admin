@@ -1,20 +1,21 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { createCollection, deleteCollection, getCollectionList, renameCollection } from '$lib/apis/rags';
+	import {
+		createCollection,
+		deleteCollection,
+		getCollectionList,
+		renameCollection
+	} from '$lib/apis/rags';
 	import Plus from '$lib/components/icons/Plus.svelte';
 	import Pencil from '$lib/components/icons/Pencil.svelte';
 	import GarbageBin from '$lib/components/icons/GarbageBin.svelte';
 	import { collection_id, user_id } from '$lib/constants';
 	import { onMount, tick } from 'svelte';
 	import { writable } from 'svelte/store';
+	import { conversations } from '../../stores';
+	import { deleteChatsByGPTsId } from '$lib/apis/chats';
 
-	let chats = [
-		{ id: 1, name: 'Programming code', time: 'Today' },
-		{ id: 2, name: 'AI summarizer', time: 'This week' },
-		{ id: 3, name: 'Greeting', time: 'This week' }
-	];
-
-	let menus = ['New Chat', 'Explore GPTs', 'Collections', 'User Profile'];
+	let menus = ['Explore GPTs', 'Collections', 'User Profile'];
 
 	let collections = [];
 	let editingIndex = null;
@@ -32,16 +33,17 @@
 	});
 
 	function navigateTo(page) {
-		if (page === 'New Chat') {
-			goto('/');
-		} else if (page === 'Explore GPTs') {
+		if (page === 'Explore GPTs') {
 			goto('/gpts');
 		} else if (page === 'Collections') {
 			showCollections.update((n) => !n); // toggle the collections visibility
-			goto('/collections');
 		} else if (page === 'User Profile') {
 			goto('/user-profile');
 		}
+	}
+
+	function navigateToConversation(conversation) {
+		goto(`/c/${conversation.id}`);
 	}
 
 	async function addCollection() {
@@ -50,7 +52,7 @@
 
 	async function handleKeydown(event) {
 		if (event.key === 'Enter') {
-			await createCollection(user_id, newCollection.trim())
+			await createCollection(user_id, newCollection.trim());
 			searchCollectionList();
 			newCollection = '';
 			addingNew = false;
@@ -66,9 +68,9 @@
 
 	async function saveEdit(event) {
 		if (event.key === 'Enter' && event.target.value.trim() !== '') {
-			await renameCollection(user_id, collections[editingIndex].id, event.target.value.trim())
+			await renameCollection(user_id, collections[editingIndex].id, event.target.value.trim());
 			searchCollectionList();
-			editingIndex = null
+			editingIndex = null;
 		}
 	}
 
@@ -76,6 +78,18 @@
 		if (confirm('Are you sure you want to delete this collection?')) {
 			await deleteCollection(user_id, collectionId);
 			searchCollectionList();
+		}
+	}
+	
+	async function handleDeleteConversation(gptsId) {
+		if (confirm('Are you sure you want to delete this conversation?')) {
+			await deleteChatsByGPTsId(user_id, gptsId);
+			conversations.update(cons => {
+				const newCons = cons.filter(v => v.id !== gptsId)
+				localStorage.setItem('conversations', JSON.stringify(newCons))
+				return newCons;
+			})
+			goto('/gpts')
 		}
 	}
 
@@ -107,13 +121,14 @@
 							on:click={() => goto('/collections/' + collection.id)}
 						>
 							{#if typeof editingIndex === 'number' && editingIndex === index}
-							<input type="text" 
-									class="border rounded p-1" 
+								<input
+									type="text"
+									class="border rounded p-1"
 									autofocus
-									bind:value={collection.name} 
-									on:blur={() => editingIndex = null}
+									bind:value={collection.name}
+									on:blur={() => (editingIndex = null)}
 									on:keydown={saveEdit}
-			>
+								/>
 							{:else}
 								{collection.name}
 							{/if}
@@ -142,10 +157,15 @@
 			{/if}
 		{/each}
 	</div>
-	<div class="font-semibold mb-2">Today {addingNew}</div>
-	{#each chats as chat}
-		<div class="mb-2 hover:bg-gray-200 p-2 rounded">
+	<div class="font-semibold mb-2">Conversations</div>
+	{#each $conversations as chat}
+		<div class="mb-2 hover:bg-gray-200 p-2 rounded flex items-center group" on:click={() => navigateToConversation(chat)}>
 			{chat.name}
+			<div class="ml-2 hidden group-hover:block">
+				<button on:click={() => handleDeleteConversation(chat.id)} class="ml-2">
+					<GarbageBin />
+				</button>
+			</div>
 		</div>
 	{/each}
 </div>

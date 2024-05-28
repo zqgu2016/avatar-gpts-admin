@@ -1,3 +1,5 @@
-import { type Writable, writable } from 'svelte/store'
+import { writable } from 'svelte/store';
 
-export const activeGPTs = writable('');
+const cons = localStorage.getItem('conversations');
+
+export const conversations = writable(cons ? JSON.parse(cons) : []);

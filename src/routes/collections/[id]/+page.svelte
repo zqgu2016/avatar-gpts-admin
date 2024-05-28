@@ -1,7 +1,9 @@
 <script lang="ts">
+	import { fade } from 'svelte/transition';
 	import { deleteFile, getFileListByCollectionId, uploadFiles } from '$lib/apis/rags';
 	import { page } from '$app/stores';
 	import GarbageBin from '$lib/components/icons/GarbageBin.svelte';
+	import Close from '$lib/components/icons/Close.svelte';
 	import Plus from '$lib/components/icons/Plus.svelte';
 	let documents = [];
 	let files;
@@ -19,32 +21,32 @@
 		}
 	}
 
-  const handleKeyDown = (event: KeyboardEvent) => {
+	const handleKeyDown = (event: KeyboardEvent) => {
 		if (event.key === 'Escape') {
 			console.log('Escape');
 			showDialog = false;
 		}
 	};
 
-  $: if (showDialog) {
-			window.addEventListener('keydown', handleKeyDown);
-			document.body.style.overflow = 'hidden';
-		} else {
-			window.removeEventListener('keydown', handleKeyDown);
-			document.body.style.overflow = 'unset';
-		}
+	$: if (showDialog) {
+		window.addEventListener('keydown', handleKeyDown);
+		document.body.style.overflow = 'hidden';
+	} else {
+		window.removeEventListener('keydown', handleKeyDown);
+		document.body.style.overflow = 'unset';
+	}
 
 	function handleFileChange(event) {
 		files = Array.from(event.target.files);
 	}
 
-	function addDocument() {
-		showDialog = true;
+	function toggleModal() {
+		showDialog = !showDialog;
 	}
 
 	async function handleSave() {
 		await uploadFiles(collectionId, files);
-		showDialog = false;
+		toggleModal();
 		getFileList();
 	}
 
@@ -57,21 +59,51 @@
 </script>
 
 <div class="w-full p-4">
-	<header class="mb-4">
-		<h2 class="text-xl font-bold">Documents</h2>
-	</header>
+	<div class="flex justify-between items-center mb-4">
+		<h1 class="text-2xl font-bold">Documents</h1>
+		<button class="bg-blue-500 text-white px-4 py-2 rounded" on:click={toggleModal}
+			>+ Upload</button
+		>
+	</div>
 
 	<div class="mb-4 flex items-center">
-		<button on:click={addDocument} class="p-2 bg-blue-500 text-white rounded">
-			<Plus />
-		</button>
 		{#if showDialog}
-			<div class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-				<div class="bg-white p-6 rounded shadow-lg">
-					<input type="file" multiple on:change={handleFileChange} class="mb-4" />
-					<button on:click={handleSave} class="bg-green-500 text-white font-bold py-2 px-4 rounded"
-						>Save</button
-					>
+			<div class="modal" in:fade={{ duration: 10 }}>
+				<div class="modal-content">
+					<div class="modal-header">
+						<h3 class="text-lg font-medium text-gray-900">Add Doc</h3>
+						<button class="text-gray-500 hover:text-gray-700" on:click={toggleModal}>
+							<Close />
+						</button>
+					</div>
+
+					<div class="modal-body">
+						<form>
+							<div class="mb-4">
+								<label class="block text-gray-700 text-sm font-bold mb-2"> Upload Files </label>
+								<input
+									type="file"
+									accept=".txt,.md,.pdf,.doc,.docx,.csv,.xls,.xlsx,.xlsd,.ppt,.pptx"
+									multiple
+									class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none"
+									on:change={handleFileChange}
+								/>
+								<p class="mt-1 text-sm text-gray-500">
+									You can upload files with types: .txt, .md, .pdf, .doc, .docx, .csv, .xls, .xlsx,
+									.xlsd, .ppt, .pptx
+								</p>
+							</div>
+						</form>
+					</div>
+
+					<div class="modal-footer">
+						<button
+							class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+							on:click={handleSave}
+						>
+							Save
+						</button>
+					</div>
 				</div>
 			</div>
 		{/if}
@@ -96,5 +128,22 @@
 <style>
 	.row:hover {
 		background-color: #f3f4f6;
+	}
+
+	.modal {
+		@apply fixed inset-0 bg-gray-700 bg-opacity-75 flex items-center justify-center z-50;
+	}
+
+	.modal-content {
+		@apply bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:w-full sm:max-w-lg;
+	}
+
+	.modal-header,
+	.modal-footer {
+		@apply flex items-center justify-between p-4 border-b border-gray-300;
+	}
+
+	.modal-body {
+		@apply p-6;
 	}
 </style>

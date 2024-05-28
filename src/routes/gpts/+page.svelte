@@ -1,24 +1,32 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import GPTsModal from '$lib/components/GPTsModal.svelte';
-	// import { assistants } from '$lib/constants';
 	import { onMount } from 'svelte';
-	import { activeGPTs } from '../../stores';
 	import { getAllGPTs, deleteGPTs } from '$lib/apis/gpts';
+	import { getCollectionList } from '$lib/apis/rags';
 	import Pencil from '$lib/components/icons/Pencil.svelte';
 	import GarbageBin from '$lib/components/icons/GarbageBin.svelte';
 	import { user_id } from '$lib/constants';
+	import { conversations } from '../../stores';
 
 	let showModal = false;
 	let assistants = [];
-	let assistant = null;
+	let collections = [];
+	let assistant = {
+		motions: []
+	};
 
 	const searchGPTs = async () => {
 		assistants = await getAllGPTs();
 	}
 
+	const searchCollectionList = async () => {
+		collections = await getCollectionList(user_id);
+	}
+
 	onMount(async () => {
 		searchGPTs();
+		searchCollectionList();
 	});
 
 	const openModal = (asst) => {
@@ -27,7 +35,21 @@
 	};
 
 	const chooseGPTs = (gptsId: string) => {
-		activeGPTs.set(gptsId);
+		const existed = $conversations.find(c => c.id === gptsId)
+		if (!existed) {
+			conversations.update(val => {
+				const newCons = [
+				...val,
+				{
+					id: gptsId,
+					name: assistants.find(v => v.id === gptsId).name,
+				},
+				]
+				localStorage.setItem('conversations', JSON.stringify(newCons))
+				return newCons;
+			})
+		}
+		
 		goto(`/c/${gptsId}`);
 	};
 	
@@ -39,7 +61,7 @@
 	};
 </script>
 
-<div class="flex h-screen">
+<div class="flex h-screen w-screen">
 	<!-- Assistants Area -->
 	<div class="flex-1 p-6">
 		<div class="flex justify-between items-center mb-4">
@@ -51,7 +73,7 @@
 
 		<div class="grid grid-cols-3 gap-4">
 			{#each assistants as assistant}
-				<div class="border p-4 rounded shadow" on:click={() => chooseGPTs(assistant.id)}>
+				<div class="border p-4 rounded shadow w-96" on:click={() => chooseGPTs(assistant.id)}>
 					<div class="flex justify-between group">
 						<img
 							src={assistant.icon || 'https://via.placeholder.com/50'}
@@ -89,7 +111,7 @@
 			{/each}
 		</div>
 
-		<GPTsModal bind:showModal {assistant} on:finish={searchGPTs} />
+		<GPTsModal bind:showModal {assistant} {collections} on:finish={searchGPTs} />
 	</div>
 </div>
 
