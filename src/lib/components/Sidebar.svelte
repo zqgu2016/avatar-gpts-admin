@@ -1,45 +1,44 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import {
-    createCollection,
-    deleteCollection,
-    getCollectionList,
-    renameCollection
-  } from '$lib/apis/rags';
-  import Plus from '$lib/components/icons/Plus.svelte';
-  import Pencil from '$lib/components/icons/Pencil.svelte';
+  import * as ChatApi from '$lib/apis/chats';
+  import * as RagApi from '$lib/apis/rags';
   import GarbageBin from '$lib/components/icons/GarbageBin.svelte';
-  import { collection_id, user_id } from '$lib/constants';
-  import { onMount, tick } from 'svelte';
-  import { writable } from 'svelte/store';
+  import Pencil from '$lib/components/icons/Pencil.svelte';
+  import Plus from '$lib/components/icons/Plus.svelte';
+  import {
+    COLLECTIONS_MENU,
+    EXPLORE_GPTS_MENU,
+    PROJECT_NAME,
+    SIDEBAR_MENUS,
+    USER_PROFILE_MENU,
+    user_id
+  } from '$lib/constants';
+  import { onMount } from 'svelte';
   import { conversations } from '../../stores';
-  import { deleteChatsByGPTsId } from '$lib/apis/chats';
-
-  let menus = ['Explore GPTs', 'Collections', 'User Profile'];
 
   let collections = [];
-  let editingIndex = null;
-  let addingNew = false;
+  let editingCollectionIndex = -1;
+  let addingNewCollection = false;
   let newCollection = '';
 
-  let showCollections = writable(false);
-
-  async function searchCollectionList() {
-    collections = await getCollectionList(user_id);
+  async function getCollectionList() {
+    collections = await RagApi.getCollectionList(user_id);
   }
 
   onMount(() => {
-    searchCollectionList();
+    getCollectionList();
   });
 
-  function navigateTo(page) {
-    if (page === 'Explore GPTs') {
+  function navigateToMenu(page: string) {
+    if (page === EXPLORE_GPTS_MENU) {
       goto('/gpts');
-    } else if (page === 'Collections') {
-      showCollections.update((n) => !n); // toggle the collections visibility
-    } else if (page === 'User Profile') {
+    } else if (page === USER_PROFILE_MENU) {
       goto('/user-profile');
     }
+  }
+
+  function navigateToCollection(collection) {
+    goto(`/collections/${collection.id}`);
   }
 
   function navigateToConversation(conversation) {
@@ -47,109 +46,114 @@
   }
 
   async function addCollection() {
-    addingNew = true;
+    addingNewCollection = true;
   }
 
   async function handleKeydown(event) {
     if (event.key === 'Enter') {
-      await createCollection(user_id, newCollection.trim());
-      searchCollectionList();
+      await RagApi.createCollection(user_id, newCollection.trim());
+      getCollectionList();
       newCollection = '';
-      addingNew = false;
+      addingNewCollection = false;
     } else if (event.key === 'Escape') {
       newCollection = '';
-      addingNew = false;
+      addingNewCollection = false;
     }
   }
 
-  function handleRenameCollection(index) {
-    editingIndex = index;
+  function handleRenameCollection(index: number) {
+    editingCollectionIndex = index;
   }
 
-  async function saveEdit(event) {
-    if (event.key === 'Enter' && event.target.value.trim() !== '') {
-      await renameCollection(user_id, collections[editingIndex].id, event.target.value.trim());
-      searchCollectionList();
-      editingIndex = null;
+  async function saveCollection(event) {
+    const value = event.target.value.trim();
+    if (event.key === 'Escape') {
+      editingCollectionIndex = -1;
+    } else if (event.key === 'Enter' && value !== '') {
+      await RagApi.renameCollection(user_id, collections[editingCollectionIndex].id, value);
+      getCollectionList();
+      editingCollectionIndex = -1;
     }
   }
 
   async function handleDeleteCollection(collectionId) {
     if (confirm('Are you sure you want to delete this collection?')) {
-      await deleteCollection(user_id, collectionId);
-      searchCollectionList();
+      await RagApi.deleteCollection(user_id, collectionId);
+      getCollectionList();
+      goto('/gpts');
     }
   }
 
   async function handleDeleteConversation(gptsId) {
     if (confirm('Are you sure you want to delete this conversation?')) {
-      await deleteChatsByGPTsId(user_id, gptsId);
-      conversations.update((cons) => {
-        const newCons = cons.filter((v) => v.id !== gptsId);
-        localStorage.setItem('conversations', JSON.stringify(newCons));
-        return newCons;
+      await ChatApi.deleteChatsByGPTsId(user_id, gptsId);
+      conversations.update((oldConversations) => {
+        const newConversations = oldConversations.filter(
+          (conversation) => conversation.id !== gptsId
+        );
+        localStorage.setItem('conversations', JSON.stringify(newConversations));
+        return newConversations;
       });
       goto('/gpts');
     }
   }
-
-  function handleBlur(event) {
-    addingNew = false;
-  }
 </script>
 
+<!-- svelte-ignore a11y-click-events-have-key-events -->
+<!-- svelte-ignore a11y-no-static-element-interactions -->
 <div class="sidebar bg-gray-100 p-4">
-  <div class="font-bold mb-4">Avatar GPTs</div>
+  <div class="text-xl font-bold mb-4">{PROJECT_NAME}</div>
   <div class="mb-4">
-    {#each menus as menu}
+    {#each SIDEBAR_MENUS as menu}
       <div
-        class="mb-2 hover:bg-gray-200 p-2 rounded cursor-pointer flex items-center group"
-        on:click={() => navigateTo(menu)}
+        class="mb-2 hover:bg-gray-200 p-2 rounded cursor-pointer flex items-center justify-between group"
+        on:click={() => navigateToMenu(menu)}
       >
         {menu}
-        {#if menu === 'Collections'}
+        {#if menu === COLLECTIONS_MENU}
           <button class="ml-2 hidden group-hover:block" on:click={addCollection}>
             <Plus />
           </button>
         {/if}
       </div>
-      {#if menu === 'Collections' && showCollections}
+      {#if menu === COLLECTIONS_MENU}
         <div class="ml-4">
           {#each collections as collection, index}
             <div
-              class="mb-2 hover:bg-gray-200 p-2 rounded flex items-center group"
-              on:click={() => goto('/collections/' + collection.id)}
+              class="mb-2 hover:bg-gray-200 p-2 rounded flex items-center justify-between group"
+              on:click={() => navigateToCollection(collection)}
             >
-              {#if typeof editingIndex === 'number' && editingIndex === index}
+              {#if editingCollectionIndex === index}
                 <input
                   type="text"
                   class="border rounded p-1"
                   autofocus
                   bind:value={collection.name}
-                  on:blur={() => (editingIndex = null)}
-                  on:keydown={saveEdit}
+                  on:blur={() => (editingCollectionIndex = -1)}
+                  on:keydown={saveCollection}
                 />
               {:else}
                 {collection.name}
+                <div class="ml-2 hidden group-hover:block">
+                  <button on:click|stopPropagation={() => handleRenameCollection(index)} class="ml-2">
+                    <Pencil />
+                  </button>
+                  <button on:click|stopPropagation={() => handleDeleteCollection(collection.id)} class="ml-2">
+                    <GarbageBin />
+                  </button>
+                </div>
               {/if}
-              <div class="ml-2 hidden group-hover:block">
-                <button on:click={() => handleRenameCollection(index)} class="ml-2">
-                  <Pencil />
-                </button>
-                <button on:click={() => handleDeleteCollection(collection.id)} class="ml-2">
-                  <GarbageBin />
-                </button>
-              </div>
             </div>
           {/each}
-          {#if addingNew}
+          {#if addingNewCollection}
             <li class="flex items-center space-x-2 pl-4">
               <input
-                bind:value={newCollection}
-                on:keydown={handleKeydown}
-                on:blur={handleBlur}
+                type="text"
+                class="border rounded p-1"
                 autofocus
-                class="border-b-2 focus:outline-none"
+                bind:value={newCollection}
+                on:blur={() => addingNewCollection = false}
+                on:keydown={handleKeydown}
               />
             </li>
           {/if}
@@ -157,18 +161,21 @@
       {/if}
     {/each}
   </div>
-  <div class="font-semibold mb-2">Conversations</div>
+  <div class="font-medium mb-2 w-full pl-2.5 text-gray-500 dark:text-gray-500 pb-0.5">
+    Conversations
+  </div>
   {#each $conversations as chat}
     <div
-      class="mb-2 hover:bg-gray-200 p-2 rounded flex items-center group"
+      class="mb-2 hover:bg-gray-200 p-2 rounded flex items-center justify-between group"
       on:click={() => navigateToConversation(chat)}
     >
       {chat.name}
-      <div class="ml-2 hidden group-hover:block">
-        <button on:click={() => handleDeleteConversation(chat.id)} class="ml-2">
-          <GarbageBin />
-        </button>
-      </div>
+      <button
+        class="ml-2 hidden group-hover:block"
+        on:click|stopPropagation={() => handleDeleteConversation(chat.id)}
+      >
+        <GarbageBin />
+      </button>
     </div>
   {/each}
 </div>
@@ -176,16 +183,5 @@
 <style>
   .sidebar {
     width: 300px;
-  }
-
-  .hover-menu {
-    display: none;
-  }
-  li:hover .hover-menu {
-    display: inline;
-  }
-
-  li:hover .hover-menu {
-    display: inline;
   }
 </style>
