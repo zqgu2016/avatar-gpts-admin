@@ -6,7 +6,7 @@
   import { getChatsByGPTsId } from '$lib/apis/chats';
   import { page } from '$app/stores';
   import { writable } from 'svelte/store';
-  import { user_id } from '$lib/constants';
+  import { currentUserId } from '../../../stores';
 
   let gpts;
   let audioElement;
@@ -21,7 +21,7 @@
   }
 
   async function loadChats() {
-    const chats = await getChatsByGPTsId(user_id, gptsId);
+    const chats = await getChatsByGPTsId($currentUserId, gptsId);
     messages.update(() =>
       chats.map((chat) => ({ sender: chat.role === 'user' ? 'me' : 'bot', text: chat.content }))
     );
@@ -60,7 +60,7 @@
   async function sendQuery(input) {
     const response = await sendMessage({
       query: input.trim(),
-      user_id: user_id,
+      user_id: $currentUserId,
       gpts_id: gptsId,
       options: {
         // instructions: [

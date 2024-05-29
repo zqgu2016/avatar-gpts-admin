@@ -10,11 +10,9 @@
     EXPLORE_GPTS_MENU,
     PROJECT_NAME,
     SIDEBAR_MENUS,
-    USER_PROFILE_MENU,
-    user_id
+    USER_PROFILES_MENU,
   } from '$lib/constants';
-  import { onMount } from 'svelte';
-  import { conversations } from '../../stores';
+  import { conversations, currentUserId } from '../../stores';
 
   let collections = [];
   let editingCollectionIndex = -1;
@@ -22,18 +20,22 @@
   let newCollection = '';
 
   async function getCollectionList() {
-    collections = await RagApi.getCollectionList(user_id);
+    collections = await RagApi.getCollectionList($currentUserId);
   }
 
-  onMount(() => {
-    getCollectionList();
-  });
+  $: {
+    if ($currentUserId) {
+      getCollectionList();
+    } else {
+      collections = [];
+    }
+  }
 
   function navigateToMenu(page: string) {
     if (page === EXPLORE_GPTS_MENU) {
       goto('/gpts');
-    } else if (page === USER_PROFILE_MENU) {
-      goto('/user-profile');
+    } else if (page === USER_PROFILES_MENU) {
+      goto('/user-profiles');
     }
   }
 
@@ -51,7 +53,7 @@
 
   async function handleKeydown(event) {
     if (event.key === 'Enter') {
-      await RagApi.createCollection(user_id, newCollection.trim());
+      await RagApi.createCollection($currentUserId, newCollection.trim());
       getCollectionList();
       newCollection = '';
       addingNewCollection = false;
@@ -70,7 +72,7 @@
     if (event.key === 'Escape') {
       editingCollectionIndex = -1;
     } else if (event.key === 'Enter' && value !== '') {
-      await RagApi.renameCollection(user_id, collections[editingCollectionIndex].id, value);
+      await RagApi.renameCollection($currentUserId, collections[editingCollectionIndex].id, value);
       getCollectionList();
       editingCollectionIndex = -1;
     }
@@ -78,7 +80,7 @@
 
   async function handleDeleteCollection(collectionId) {
     if (confirm('Are you sure you want to delete this collection?')) {
-      await RagApi.deleteCollection(user_id, collectionId);
+      await RagApi.deleteCollection($currentUserId, collectionId);
       getCollectionList();
       goto('/gpts');
     }
@@ -86,7 +88,7 @@
 
   async function handleDeleteConversation(gptsId) {
     if (confirm('Are you sure you want to delete this conversation?')) {
-      await ChatApi.deleteChatsByGPTsId(user_id, gptsId);
+      await ChatApi.deleteChatsByGPTsId($currentUserId, gptsId);
       conversations.update((oldConversations) => {
         const newConversations = oldConversations.filter(
           (conversation) => conversation.id !== gptsId

@@ -18,7 +18,7 @@ export const getGPTsByOwner = async (userId: string) => {
   }).then((res) => res.json());
 };
 
-export const getAllGPTs = async () => {
+export const getGPTsList = async () => {
   return fetch(`${GPTS_API_BASE_URL}/list_all`, {
     method: 'GET',
     headers: {

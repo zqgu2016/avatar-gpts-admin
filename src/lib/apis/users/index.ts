@@ -1,5 +1,14 @@
 import { USER_API_BASE_URL } from '$lib/constants';
 
+export const getUserProfileList = async () => {
+  return fetch(`${USER_API_BASE_URL}/get_profiles`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  }).then((res) => res.json());
+};
+
 export const getUserProfile = async (userId: string) => {
   return fetch(`${USER_API_BASE_URL}/get_profile?user_id=${userId}`, {
     method: 'GET',
@@ -22,7 +31,7 @@ export const saveUserProfile = async (userId: string, profile: string) => {
 };
 
 export const deleteUserProfile = async (userId: string) => {
-  return fetch(`${USER_API_BASE_URL}?user_id=${userId}`, {
+  return fetch(`${USER_API_BASE_URL}/delete_profile?user_id=${userId}`, {
     method: 'DELETE',
     headers: {
       'Content-Type': 'application/json'

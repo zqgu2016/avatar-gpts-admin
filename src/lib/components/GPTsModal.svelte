@@ -1,9 +1,8 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte';
   import { v4 as uuidv4 } from 'uuid';
-  import ModelConfiguration from './ModelConfiguration.svelte';
   import { createGPTs, updateGPTs } from '$lib/apis/gpts';
-  import { user_id } from '$lib/constants';
+  import { currentUserId } from '../../stores';
   export let showModal = false;
   export let assistant = {
     motions: [],
@@ -58,13 +57,13 @@
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!assistant.id) {
-      await createGPTs(user_id, {
+      await createGPTs($currentUserId, {
         ...assistant,
         id: uuidv4(),
         type: 'Companion'
       });
     } else {
-      await updateGPTs(user_id, assistant);
+      await updateGPTs($currentUserId, assistant);
     }
     toggleModal();
     dispatch('finish');

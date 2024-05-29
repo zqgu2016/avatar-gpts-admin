@@ -8,12 +8,10 @@ export const USER_API_BASE_URL = `${WEBUI_BASE_URL}/user_profile`;
 export const MESSAGE_API_BASE_URL = `${WEBUI_BASE_URL}/messages`;
 export const CHAT_API_BASE_URL = `${WEBUI_BASE_URL}/chats`;
 
-export const user_id = '82bae850-e2c4-49c4-a912-843dcf3b5f42';
-
 export const PROJECT_NAME = 'Avatar GPTs';
 
 export const EXPLORE_GPTS_MENU = 'Explore GPTs';
 export const COLLECTIONS_MENU = 'Collections';
-export const USER_PROFILE_MENU = 'User Profile';
+export const USER_PROFILES_MENU = 'User Profiles';
 
-export const SIDEBAR_MENUS = [EXPLORE_GPTS_MENU, COLLECTIONS_MENU, USER_PROFILE_MENU];
+export const SIDEBAR_MENUS = [EXPLORE_GPTS_MENU, COLLECTIONS_MENU, USER_PROFILES_MENU];
