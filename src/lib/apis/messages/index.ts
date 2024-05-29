@@ -1,6 +1,6 @@
 import { MESSAGE_API_BASE_URL } from '$lib/constants';
 
-export const sendMessage = async (message: string) => {
+export const sendMessage = async (message: any) => {
   return fetch(`${MESSAGE_API_BASE_URL}/send_message`, {
     method: 'POST',
     headers: {

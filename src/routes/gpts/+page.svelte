@@ -12,7 +12,7 @@
   let showModal = false;
   let collections = [];
   let gptsList = [];
-  let currentGpts = null;
+  let currentGpts = {};
 
   async function getGPTsList() {
     gptsList = await GPTsApi.getGPTsList();
@@ -29,7 +29,7 @@
 
   function openModal(val?) {
     showModal = true;
-    currentGpts = val ?? null;
+    currentGpts = val ?? {};
   }
 
   function navigateToChat(gptsId: string) {
@@ -75,7 +75,7 @@
         <div class="border p-4 rounded shadow w-96" on:click={() => navigateToChat(gpts.id)}>
           <div class="flex justify-between group">
             <Avatar.Root>
-              <Avatar.Image src={gpts.icon || 'https://via.placeholder.com/50'} alt="GPTs Icon" />
+              <Avatar.Image src={'https://via.placeholder.com/50'} alt="GPTs Icon" />
             </Avatar.Root>
             <div class="hidden group-hover:flex">
               <button on:click|stopPropagation={() => openModal(gpts)} class="mr-2">
@@ -87,7 +87,7 @@
             </div>
           </div>
           <div class="font-semibold mb-2">{gpts.name}</div>
-          <div class="text-gray-600 mb-2 truncate-text">
+          <div class="text-gray-600 mb-2 truncate-text h-12">
             {gpts.description ?? gpts.persona}
           </div>
           <div class="text-sm text-gray-500">
@@ -109,7 +109,7 @@
     </div>
   </div>
 </div>
-<GPTsModal bind:showModal assistant={currentGpts} {collections} on:finish={getGPTsList} />
+<GPTsModal bind:showModal gpts={currentGpts} {collections} on:finish={getGPTsList} />
 
 <style>
   .truncate-text {

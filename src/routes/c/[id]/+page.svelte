@@ -10,6 +10,7 @@
 
   let gpts;
   let audioElement;
+  let enableVoice = false;
 
   $: gptsId = $page.params.id;
 
@@ -62,18 +63,13 @@
       query: input.trim(),
       user_id: $currentUserId,
       gpts_id: gptsId,
-      options: {
-        // instructions: [
-        // 	'You **should always** speak in ancient Chinese like 小乔（三国演义中的人物).',
-        // 	'Insert voice mood tags, at beginning postion of answer and each sentence according to the mood of sentence.',
-        // 	'Insert motion tags, at the beginning postion of each paragragh, to express body language while speaking.',
-        // 	'Use emojis.',
-        // 	"Don't ask user to access web links or press button to take follow-up action.",
-        // 	"Don't output json in your answer."
-        // ],
-        avatar_mode: true
-        // voice_audio: true,
+      options: enableVoice ? {
+        avatar_mode: true,
+        voice_audio: true,
         // speaker: 'zh-CN-XiaoxiaoNeural'
+        speaker: 'zh-CN-YunxiNeural'
+      } : {
+        avatar_mode: true,
       },
       stream: true
     });
@@ -205,6 +201,10 @@
       on:keydown={(e) => e.key === 'Enter' && send()}
       placeholder="Type your message..."
     />
+    <label class="ml-2 inline-flex items-center">
+      <input type="checkbox" class="form-checkbox" bind:checked={enableVoice} />
+      <span class="ml-2">Enable Voice</span>
+    </label>
     <button
       class="ml-2 px-4 py-2 bg-blue-500 text-white rounded-md focus:outline-none"
       on:click={send}

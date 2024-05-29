@@ -4,14 +4,12 @@
   import { createGPTs, updateGPTs } from '$lib/apis/gpts';
   import { currentUserId } from '../../stores';
   export let showModal = false;
-  export let assistant = {
-    motions: [],
-    type: ''
-  };
+  export let gpts;
   export let collections = [];
 
   let mounted = false;
-  const types = ['Companion', 'Roleplay', 'Knowledge']
+  let showExtraSkills = false;
+  const types = ['Companion', 'Roleplay', 'Knowledge'];
 
   let action_example = [
     {
@@ -56,14 +54,14 @@
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!assistant.id) {
+    if (!gpts.id) {
       await createGPTs($currentUserId, {
-        ...assistant,
+        ...gpts,
         id: uuidv4(),
         type: 'Companion'
       });
     } else {
-      await updateGPTs($currentUserId, assistant);
+      await updateGPTs($currentUserId, gpts);
     }
     toggleModal();
     dispatch('finish');
@@ -75,18 +73,18 @@
     e.stopPropagation();
     e.preventDefault();
 
-    if (!assistant.motions) {
-      assistant.motions = [];
+    if (!gpts.motions) {
+      gpts.motions = [];
     }
 
-    if (newTag && !assistant.motions.includes(newTag)) {
-      assistant.motions = [...assistant.motions, newTag];
+    if (newTag && !gpts.motions.includes(newTag)) {
+      gpts.motions = [...gpts.motions, newTag];
       newTag = '';
     }
   }
 
   function removeTag(tag) {
-    assistant.motions = assistant.motions.filter((t) => t !== tag);
+    gpts.motions = gpts.motions.filter((t) => t !== tag);
   }
 
   function json2str(obj) {
@@ -107,9 +105,9 @@
     const file = event.target.files[0];
     const reader = new FileReader();
 
-    reader.onload = function(e) {
+    reader.onload = function (e) {
       base64Image = e.target.result;
-      assistant.icon = base64Image;
+      gpts.icon = base64Image;
     };
 
     reader.readAsDataURL(file);
@@ -119,15 +117,15 @@
 {#if showModal}
   <div class="modal">
     <div class="modal-content">
-      <h2 class="text-2xl font-semibold mb-4">{assistant.id ? 'Update' : 'Create'} assistant</h2>
+      <h2 class="text-2xl font-semibold mb-4">{gpts.id ? 'Update' : 'Create'} GPTS</h2>
       <div class="form-container">
         <div class="form-section">
           <div class="left-column">
             <form on:submit={handleSubmit}>
-              <div class="flex items-center justify-between mt-4">
+              <!-- <div class="flex items-center justify-between mt-4">
                 <div class="w-32 h-32 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center mr-4">
-                  {#if assistant.icon}
-                    <img src={assistant.icon} alt="avatar preview" class="object-cover w-full h-full" />
+                  {#if gpts.icon}
+                    <img src={gpts.icon} alt="avatar preview" class="object-cover w-full h-full" />
                   {:else}
                     <span class="text-gray-500">No Image</span>
                   {/if}
@@ -136,12 +134,10 @@
                   <label class="block text-sm font-medium text-gray-700">Upload Image</label>
                   <input type="file" accept="image/*" class="mt-1 block w-full" on:change={handleFileUpload} />
                 </div>
-              </div>
+              </div> -->
               <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-bold mb-2" for="type">
-                  Type
-                </label>
-                <select class="form-select" bind:value={assistant.type} id="type">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="type"> Type </label>
+                <select class="form-select" bind:value={gpts.type} id="type">
                   <option value="" disabled hidden>choose a Type</option>
                   {#each types as type}
                     <option value={type}>{type}</option>
@@ -154,20 +150,24 @@
                   class="w-full border border-gray-300 p-2 rounded"
                   id="name"
                   type="text"
-                  placeholder="Assistant Name"
-                  bind:value={assistant.name}
+                  placeholder="GPTs Name"
+                  bind:value={gpts.name}
                 />
               </div>
-              <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-bold mb-2" for="name"> Role Model </label>
-                <input
-                  class="w-full border border-gray-300 p-2 rounded"
-                  id="name"
-                  type="text"
-                  placeholder="Assistant Name"
-                  bind:value={assistant.role_model}
-                />
-              </div>
+              {#if gpts.type === 'Roleplay'}
+                <div class="mb-4">
+                  <label class="block text-gray-700 text-sm font-bold mb-2" for="name">
+                    Role Model
+                  </label>
+                  <input
+                    class="w-full border border-gray-300 p-2 rounded"
+                    id="name"
+                    type="text"
+                    placeholder="Role Model"
+                    bind:value={gpts.role_model}
+                  />
+                </div>
+              {/if}
               <div class="mb-4">
                 <label class="block text-gray-700 text-sm font-bold mb-2" for="persona">
                   Persona
@@ -176,7 +176,7 @@
                   class="w-full h-40 border border-gray-300 p-2 rounded"
                   id="persona"
                   placeholder="He knows everything about python"
-                  bind:value={assistant.persona}
+                  bind:value={gpts.persona}
                 ></textarea>
               </div>
               <div class="mb-4">
@@ -184,10 +184,10 @@
                   Conversation Samples
                 </label>
                 <textarea
-                  class="w-full h-40 border border-gray-300 p-2 rounded"
+                  class="w-full h-30 border border-gray-300 p-2 rounded"
                   id="conversationSamples"
                   placeholder="He knows everything about python"
-                  bind:value={assistant.conversation_samples}
+                  bind:value={gpts.conversation_samples}
                 ></textarea>
               </div>
               <!-- <ModelConfiguration /> -->
@@ -203,13 +203,25 @@
                                 </div>  
                             </div>   -->
               <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-bold mb-2"> Capabilities </label>
-                <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2"> Skills </label>
+                <div>
                   <label class="inline-flex items-center">
-                    <input type="checkbox" class="form-checkbox" bind:checked={assistant.rag} />
+                    <input type="checkbox" class="form-checkbox" bind:checked={gpts.browsing} />
+                    <span class="ml-2">Web Browsing</span>
+                  </label>
+                </div>
+                <div>
+                  <label class="inline-flex items-center">
+                    <input type="checkbox" class="form-checkbox" bind:checked={gpts.memory} />
+                    <span class="ml-2">Memory</span>
+                  </label>
+                </div>
+                <div>
+                  <label class="inline-flex items-center">
+                    <input type="checkbox" class="form-checkbox" bind:checked={gpts.rag} />
                     <span class="ml-2">Knowledge Base</span>
                   </label>
-                  <select class="form-select" bind:value={assistant.collection_id}>
+                  <select class="form-select" bind:value={gpts.collection_id}>
                     <option value="" disabled selected hidden>choose a Collection</option>
                     {#each collections as option}
                       <option value={option.id}>{option.name}</option>
@@ -217,20 +229,25 @@
                   </select>
                 </div>
                 <div class="mb-4">
-                  <label class="inline-flex items-center">
-                    <input
-                      type="checkbox"
-                      class="form-checkbox"
-                      bind:checked={assistant.browsing}
-                    />
-                    <span class="ml-2">Web Browsing</span>
-                  </label>
-                </div>
-                <div class="mb-4">
-                  <label class="inline-flex items-center">
-                    <input type="checkbox" class="form-checkbox" bind:checked={assistant.memory} />
-                    <span class="ml-2">Memory</span>
-                  </label>
+                  <div class="flex items-center justify-between">
+                    <label class="block text-gray-700 text-sm font-bold mb-2"> Extra Skills </label>
+                    <button
+                      on:click={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        showExtraSkills = !showExtraSkills;
+                      }}>{showExtraSkills ? 'Collapse' : 'Expand'}</button
+                    >
+                  </div>
+                  {#if showExtraSkills}
+                    <textarea
+                      class="w-full h-60 border border-gray-300 p-2 rounded"
+                      id="actions"
+                      placeholder={json2str(action_example)}
+                      value={json2str(gpts.actions)}
+                      on:input={(evt) => (gpts.actions = str2json(evt.target.value))}
+                    ></textarea>
+                  {/if}
                 </div>
                 <div class="mb-4">
                   <label class="block text-gray-700 text-sm font-bold mb-2" for="language">
@@ -241,64 +258,63 @@
                     id="language"
                     type="text"
                     placeholder="Language"
-                    bind:value={assistant.language}
+                    bind:value={gpts.language}
                   />
                 </div>
-                <div class="mb-4">
-                  <label class="block text-gray-700 text-sm font-bold mb-2" for="speaker">
-                    Speaker
-                  </label>
-                  <input
-                    class="w-full border border-gray-300 p-2 rounded"
-                    id="speaker"
-                    type="text"
-                    placeholder="Speaker"
-                    bind:value={assistant.speaker}
-                  />
-                </div>
-                <div class="mb-4">
-                  <label class="block text-gray-700 text-sm font-bold mb-2" for="motions">
-                    Motions
-                  </label>
-                  <div class="flex flex-wrap items-center -m-1">
-                    {#if assistant?.motions}
-                      {#each assistant.motions as tag}
-                        <div
-                          class="bg-blue-500 text-white rounded-full px-3 py-1 m-1 flex items-center"
-                        >
-                          {tag}
-                          <button class="ml-2" on:click={() => removeTag(tag)}> &times; </button>
-                        </div>
-                      {/each}
-                    {/if}
-
+                {#if gpts.type === 'Roleplay'}
+                  <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="speaker">
+                      Speaker
+                    </label>
                     <input
+                      class="w-full border border-gray-300 p-2 rounded"
+                      id="speaker"
                       type="text"
-                      bind:value={newTag}
-                      on:keydown={(e) => e.key === 'Enter' && addTag(e)}
-                      class="m-1 p-1 border rounded"
-                      placeholder="Add motion..."
+                      placeholder="Speaker"
+                      bind:value={gpts.speaker}
                     />
                   </div>
-                </div>
-                <div class="mb-4">  
-                    <label class="block text-gray-700 text-sm font-bold mb-2" for="domain">  
-                        Domain  
-                    </label>  
-                    <input class="w-full border border-gray-300 p-2 rounded" id="domain" type="text" placeholder="Domain" bind:value={assistant.domain}>  
-                </div>
-                <div class="mb-4">
-                  <label class="block text-gray-700 text-sm font-bold mb-2" for="actions">
-                    Actions
-                  </label>
-                  <textarea
-                    class="w-full h-60 border border-gray-300 p-2 rounded"
-                    id="actions"
-                    placeholder={json2str(action_example)}
-                    value={json2str(assistant.actions)}
-                    on:input={(evt) => (assistant.actions = str2json(evt.target.value))}
-                  ></textarea>
-                </div>
+                  <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="motions">
+                      Motions
+                    </label>
+                    <div class="flex flex-wrap items-center -m-1">
+                      {#if gpts?.motions}
+                        {#each gpts.motions as tag}
+                          <div
+                            class="bg-blue-500 text-white rounded-full px-3 py-1 m-1 flex items-center"
+                          >
+                            {tag}
+                            <button class="ml-2" on:click={() => removeTag(tag)}> &times; </button>
+                          </div>
+                        {/each}
+                      {/if}
+
+                      <input
+                        type="text"
+                        bind:value={newTag}
+                        on:keydown={(e) => e.key === 'Enter' && addTag(e)}
+                        class="m-1 p-1 border rounded"
+                        placeholder="Add motion..."
+                      />
+                    </div>
+                  </div>
+                {/if}
+
+                {#if gpts.type === 'Knowledge'}
+                  <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="domain">
+                      Domain
+                    </label>
+                    <input
+                      class="w-full border border-gray-300 p-2 rounded"
+                      id="domain"
+                      type="text"
+                      placeholder="Domain"
+                      bind:value={gpts.domain}
+                    />
+                  </div>
+                {/if}
               </div>
             </form>
           </div>
@@ -309,7 +325,7 @@
             <textarea
               class="w-full h-[calc(100%-30px)] border border-gray-300 p-2 rounded"
               placeholder="You'll act as..."
-              bind:value={assistant.instructions}
+              bind:value={gpts.instructions}
             ></textarea>
           </div>
         </div>
@@ -356,7 +372,7 @@
   .footer {
     @apply flex justify-end mt-4;
   }
-  input[type="file"] {
+  input[type='file'] {
     padding: 0.5rem;
     background-color: #fff;
     border: 1px solid #d1d5db;
@@ -365,7 +381,7 @@
     transition: border-color 0.2s;
   }
 
-  input[type="file"]:hover {
+  input[type='file']:hover {
     border-color: #9ca3af;
   }
 </style>
