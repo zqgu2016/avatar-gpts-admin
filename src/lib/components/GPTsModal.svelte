@@ -6,11 +6,13 @@
   import { user_id } from '$lib/constants';
   export let showModal = false;
   export let assistant = {
-    motions: []
+    motions: [],
+    type: ''
   };
   export let collections = [];
 
   let mounted = false;
+  const types = ['Companion', 'Roleplay', 'Knowledge']
 
   let action_example = [
     {
@@ -99,6 +101,20 @@
       return null;
     }
   }
+
+  let base64Image = '';
+
+  function handleFileUpload(event) {
+    const file = event.target.files[0];
+    const reader = new FileReader();
+
+    reader.onload = function(e) {
+      base64Image = e.target.result;
+      assistant.icon = base64Image;
+    };
+
+    reader.readAsDataURL(file);
+  }
 </script>
 
 {#if showModal}
@@ -109,12 +125,30 @@
         <div class="form-section">
           <div class="left-column">
             <form on:submit={handleSubmit}>
-              <!-- <div class="mb-4">  
-                                <label class="block text-gray-700 text-sm font-bold mb-2" for="avatar">  
-                                    Avatar  
-                                </label>  
-                                <button class="bg-gray-200 text-gray-700 py-2 px-4 rounded">Upload</button>  
-                            </div>   -->
+              <div class="flex items-center justify-between mt-4">
+                <div class="w-32 h-32 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center mr-4">
+                  {#if assistant.icon}
+                    <img src={assistant.icon} alt="avatar preview" class="object-cover w-full h-full" />
+                  {:else}
+                    <span class="text-gray-500">No Image</span>
+                  {/if}
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Upload Image</label>
+                  <input type="file" accept="image/*" class="mt-1 block w-full" on:change={handleFileUpload} />
+                </div>
+              </div>
+              <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="type">
+                  Type
+                </label>
+                <select class="form-select" bind:value={assistant.type} id="type">
+                  <option value="" disabled hidden>choose a Type</option>
+                  {#each types as type}
+                    <option value={type}>{type}</option>
+                  {/each}
+                </select>
+              </div>
               <div class="mb-4">
                 <label class="block text-gray-700 text-sm font-bold mb-2" for="name"> Name </label>
                 <input
@@ -126,14 +160,35 @@
                 />
               </div>
               <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-bold mb-2" for="description">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="name"> Role Model </label>
+                <input
+                  class="w-full border border-gray-300 p-2 rounded"
+                  id="name"
+                  type="text"
+                  placeholder="Assistant Name"
+                  bind:value={assistant.role_model}
+                />
+              </div>
+              <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="persona">
                   Persona
                 </label>
                 <textarea
                   class="w-full h-40 border border-gray-300 p-2 rounded"
-                  id="description"
+                  id="persona"
                   placeholder="He knows everything about python"
                   bind:value={assistant.persona}
+                ></textarea>
+              </div>
+              <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="conversationSamples">
+                  Conversation Samples
+                </label>
+                <textarea
+                  class="w-full h-40 border border-gray-300 p-2 rounded"
+                  id="conversationSamples"
+                  placeholder="He knows everything about python"
+                  bind:value={assistant.conversation_samples}
                 ></textarea>
               </div>
               <!-- <ModelConfiguration /> -->
@@ -227,12 +282,12 @@
                     />
                   </div>
                 </div>
-                <!-- <div class="mb-4">  
-                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="domain">  
-                                        Domain  
-                                    </label>  
-                                    <input class="w-full border border-gray-300 p-2 rounded" id="domain" type="text" placeholder="Domain" bind:value={assistant.domain}>  
-                                </div> -->
+                <div class="mb-4">  
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="domain">  
+                        Domain  
+                    </label>  
+                    <input class="w-full border border-gray-300 p-2 rounded" id="domain" type="text" placeholder="Domain" bind:value={assistant.domain}>  
+                </div>
                 <div class="mb-4">
                   <label class="block text-gray-700 text-sm font-bold mb-2" for="actions">
                     Actions
@@ -301,5 +356,17 @@
   }
   .footer {
     @apply flex justify-end mt-4;
+  }
+  input[type="file"] {
+    padding: 0.5rem;
+    background-color: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+
+  input[type="file"]:hover {
+    border-color: #9ca3af;
   }
 </style>

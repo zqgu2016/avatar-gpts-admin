@@ -8,6 +8,7 @@
   import GarbageBin from '$lib/components/icons/GarbageBin.svelte';
   import { user_id } from '$lib/constants';
   import { conversations } from '../../stores';
+  import * as Avatar from "$lib/components/ui/avatar";
 
   let showModal = false;
   let assistants = [];
@@ -31,7 +32,9 @@
 
   const openModal = (asst) => {
     showModal = true;
-    assistant = asst;
+    assistant = asst || {
+      motions: []
+    };
   };
 
   const chooseGPTs = (gptsId: string) => {
@@ -66,7 +69,7 @@
   <div class="flex-1 p-6">
     <div class="flex justify-between items-center mb-4">
       <h1 class="text-2xl font-bold">GPTs</h1>
-      <button class="bg-blue-500 text-white px-4 py-2 rounded" on:click={openModal}
+      <button class="bg-blue-500 text-white px-4 py-2 rounded" on:click={() => openModal()}
         >+ Create new GPTs</button
       >
     </div>
@@ -75,11 +78,9 @@
       {#each assistants as assistant}
         <div class="border p-4 rounded shadow w-96" on:click={() => chooseGPTs(assistant.id)}>
           <div class="flex justify-between group">
-            <img
-              src={assistant.icon || 'https://via.placeholder.com/50'}
-              alt={assistant.name}
-              class="mb-4 rounded-full"
-            />
+            <Avatar.Root>
+              <Avatar.Image src={assistant.icon || 'https://via.placeholder.com/50'} alt="GPTs Icon" />
+            </Avatar.Root>
             <div class="hidden group-hover:flex">
               <button on:click|stopPropagation={() => openModal(assistant)} class="mr-2">
                 <Pencil />
