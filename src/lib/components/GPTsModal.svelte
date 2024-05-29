@@ -58,7 +58,6 @@
       await createGPTs($currentUserId, {
         ...gpts,
         id: uuidv4(),
-        type: 'Companion'
       });
     } else {
       await updateGPTs($currentUserId, gpts);
@@ -219,7 +218,7 @@
                 <div>
                   <label class="inline-flex items-center">
                     <input type="checkbox" class="form-checkbox" bind:checked={gpts.rag} />
-                    <span class="ml-2">Knowledge Base</span>
+                    <span class="ml-2">RAG</span>
                   </label>
                   <select class="form-select" bind:value={gpts.collection_id}>
                     <option value="" disabled selected hidden>choose a Collection</option>

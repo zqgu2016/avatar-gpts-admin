@@ -86,13 +86,16 @@
               </button>
             </div>
           </div>
-          <div class="font-semibold mb-2">{gpts.name}</div>
+          <div class="font-semibold mb-2">
+            <span class="text-gray-500">{gpts.type}</span>
+            {gpts.name}
+          </div>
           <div class="text-gray-600 mb-2 truncate-text h-12">
             {gpts.description ?? gpts.persona}
           </div>
           <div class="text-sm text-gray-500">
             <div class="flex">
-              <div class="w-1/2">Knowledge Base:</div>
+              <div class="w-1/2">RAG:</div>
               <div class="w-1/2">{gpts.rag ? 'Enabled' : 'Disabled'}</div>
             </div>
             <div class="flex">

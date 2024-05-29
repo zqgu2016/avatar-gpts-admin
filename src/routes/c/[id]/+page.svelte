@@ -6,11 +6,12 @@
   import { getChatsByGPTsId } from '$lib/apis/chats';
   import { page } from '$app/stores';
   import { writable } from 'svelte/store';
-  import { currentUserId } from '../../../stores';
+  import { currentUserId, conversations } from '../../../stores';
 
   let gpts;
   let audioElement;
   let enableVoice = false;
+  let title;
 
   $: gptsId = $page.params.id;
 
@@ -28,10 +29,15 @@
     );
   }
 
+  function getTitle() {
+    title = $conversations.find(conversation => conversation.id === gptsId)?.name;
+  }
+
   $: {
     if (gptsId) {
       getAllList();
       loadChats();
+      getTitle()
     }
   }
 
@@ -66,8 +72,8 @@
       options: enableVoice ? {
         avatar_mode: true,
         voice_audio: true,
-        // speaker: 'zh-CN-XiaoxiaoNeural'
-        speaker: 'zh-CN-YunxiNeural'
+        speaker: 'zh-CN-XiaoxiaoNeural'
+        // speaker: 'zh-CN-YunxiNeural'
       } : {
         avatar_mode: true,
       },
@@ -144,6 +150,7 @@
 </script>
 
 <div class="flex flex-col h-full w-full">
+  <div class="text-lg font-bold ml-4 mt-2">Bot: {title}</div>
   <!-- GPTs Card Container -->
   {#if $messages.length === 0}
     <div class="flex-1 p-6 overflow-auto content-center">
@@ -163,7 +170,7 @@
           </div>
           <div class="text-sm text-gray-500">
             <div class="flex">
-              <div class="w-1/2">Knowledge Base:</div>
+              <div class="w-1/2">RAG:</div>
               <div class="w-1/2">{gpts.rag ? 'Enabled' : 'Disabled'}</div>
             </div>
             <div class="flex">
