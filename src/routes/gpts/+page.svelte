@@ -75,7 +75,7 @@
         <div class="border p-4 rounded shadow w-96" on:click={() => navigateToChat(gpts.id)}>
           <div class="flex justify-between group">
             <Avatar.Root>
-              <Avatar.Image src={'https://via.placeholder.com/50'} alt="GPTs Icon" />
+              <Avatar.Image src={'https://cdn-icons-png.flaticon.com/128/3558/3558874.png'} alt="GPTs Icon" />
             </Avatar.Root>
             <div class="hidden group-hover:flex">
               <button on:click|stopPropagation={() => openModal(gpts)} class="mr-2">
